@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steering Dashboard</title>
+    <style>
+        :root {
+            --step-1: #A9D1EA;
+            --step-2: #BECAE0;
+            --step-3: #D3C4D6;
+            --step-4: #E8BDCC;
+            --step-5: #FDB7C2;
+
+            --bg-dark: #1C1F26;
+            --group-bg: rgba(255, 255, 255, 0.03);
+            --text-main: #F0F4F8;
+            --text-muted: #9BA3AF;
+        }
+        body { 
+            background-color: var(--bg-dark); 
+            color: var(--text-main); 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            padding: 50px 60px;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+        }
+        .dashboard-container { width: 100%; max-width: 650px; }
+        .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        h2 { 
+            margin: 0; font-size: 32px; font-weight: 600;
+            background: linear-gradient(45deg, var(--step-1), var(--step-5));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        
+        .btn-calibrate, .btn-save {
+            background: rgba(169, 209, 234, 0.1); border: 2px solid var(--step-1);
+            color: var(--step-1); padding: 10px 20px; border-radius: 8px; font-size: 14px;
+            font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 10px rgba(169, 209, 234, 0.1);
+        }
+        .btn-calibrate:hover, .btn-save:hover { background: rgba(169, 209, 234, 0.2); box-shadow: 0 0 15px rgba(169, 209, 234, 0.3); }
+        .btn-calibrate:active, .btn-save:active { transform: scale(0.95); }
+
+        .btn-delete {
+            background: rgba(253, 183, 194, 0.1); border: 2px solid var(--step-5);
+            color: var(--step-5); padding: 10px 20px; border-radius: 8px; font-size: 14px;
+            font-weight: bold; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 10px rgba(253, 183, 194, 0.1);
+        }
+        .btn-delete:hover { background: rgba(253, 183, 194, 0.2); box-shadow: 0 0 15px rgba(253, 183, 194, 0.3); }
+        .btn-delete:active { transform: scale(0.95); }
+
+        .profile-bar {
+            display: flex; gap: 10px; margin-bottom: 30px;
+        }
+        select {
+            flex: 1; padding: 10px; background: rgba(255,255,255,0.05); color: #fff;
+            border: 1px solid var(--step-1); border-radius: 8px; outline: none; font-family: inherit; font-size: 14px; cursor: pointer;
+        }
+        select option { background: var(--bg-dark); color: #fff; }
+
+        .control-group { 
+            margin-bottom: 30px; padding: 25px 30px; background: var(--group-bg);
+            border-radius: 12px; border-left: 4px solid var(--step-1); transition: all 0.3s ease;
+        }
+        .control-group.live-gauge { background: rgba(255, 255, 255, 0.04); box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+        
+        .control-group:nth-child(3) { border-left-color: var(--step-1); }
+        .control-group:nth-child(4) { border-left-color: var(--step-1); }
+        .control-group:nth-child(5) { border-left-color: var(--step-2); }
+        .control-group:nth-child(6) { border-left-color: var(--step-3); }
+        .control-group:nth-child(7) { border-left-color: var(--step-4); }
+        .control-group:nth-child(8) { border-left-color: var(--step-5); }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .label-title { font-weight: 600; font-size: 18px; letter-spacing: 0.5px; }
+        
+        .badge { padding: 5px 12px; border-radius: 20px; font-size: 14px; font-weight: bold; font-variant-numeric: tabular-nums; }
+        
+        .control-group:nth-child(3) .badge { color: var(--step-1); background-color: rgba(169, 209, 234, 0.15); }
+        .control-group:nth-child(4) .badge { color: var(--step-1); background-color: rgba(169, 209, 234, 0.15); }
+        .control-group:nth-child(5) .badge { color: var(--step-2); background-color: rgba(190, 202, 224, 0.15); }
+        .control-group:nth-child(6) .badge { color: var(--step-3); background-color: rgba(211, 196, 214, 0.15); }
+        .control-group:nth-child(7) .badge { color: var(--step-4); background-color: rgba(232, 189, 204, 0.15); }
+        .control-group:nth-child(8) .badge { color: var(--step-5); background-color: rgba(253, 183, 194, 0.15); }
+        .live-gauge .badge { color: #fff !important; background-color: rgba(255,255,255,0.2) !important; }
+        
+        .description { font-size: 13px; color: var(--text-muted); margin-bottom: 25px; line-height: 1.5; }
+        
+        .gauge-track { width: 100%; height: 12px; background: rgba(0, 0, 0, 0.6); border-radius: 6px; position: relative; margin-top: 15px; }
+        .gauge-center { position: absolute; left: 50%; top: -4px; bottom: -4px; width: 2px; background: rgba(255, 255, 255, 0.3); transform: translateX(-50%); z-index: 1;}
+        .gauge-indicator {
+            position: absolute; top: -2px; height: 16px; width: 6px; background: var(--step-1);
+            border-radius: 3px; box-shadow: 0 0 15px rgba(169, 209, 234, 0.6); left: 50%; transform: translateX(-50%); transition: left 0.05s linear; z-index: 2;
+        }
+
+        @keyframes flash-white {
+            0% { background: #fff; box-shadow: 0 0 20px #fff; transform: translateX(-50%) scale(1); }
+            50% { background: #fff; box-shadow: 0 0 40px #fff, 0 0 60px #fff; transform: translateX(-50%) scale(1.4); z-index: 10; }
+            100% { background: #fff; box-shadow: 0 0 20px #fff; transform: translateX(-50%) scale(1); }
+        }
+        .gauge-indicator.limit-hit {
+            animation: flash-white 0.6s ease-in-out infinite;
+            background-color: #fff !important;
+        }
+
+        input[type=range] { width: 100%; -webkit-appearance: none; background: transparent; outline: none; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; background: rgba(0, 0, 0, 0.4); border-radius: 3px; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: var(--step-1);
+            margin-top: -7px; cursor: pointer; box-shadow: 0 0 12px rgba(169, 209, 234, 0.4); transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:active { transform: scale(1.15); }
+        .control-group:nth-child(4) input[type=range]::-webkit-slider-thumb { background: var(--step-1); box-shadow: 0 0 12px rgba(169, 209, 234, 0.4); }
+        .control-group:nth-child(5) input[type=range]::-webkit-slider-thumb { background: var(--step-2); box-shadow: 0 0 12px rgba(190, 202, 224, 0.4); }
+        .control-group:nth-child(6) input[type=range]::-webkit-slider-thumb { background: var(--step-3); box-shadow: 0 0 12px rgba(211, 196, 214, 0.4); }
+        .control-group:nth-child(7) input[type=range]::-webkit-slider-thumb { background: var(--step-4); box-shadow: 0 0 12px rgba(232, 189, 204, 0.4); }
+        .control-group:nth-child(8) input[type=range]::-webkit-slider-thumb { background: var(--step-5); box-shadow: 0 0 12px rgba(253, 183, 194, 0.4); }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="dash-header">
+            <h2>Sim Telemetry</h2>
+            <button class="btn-calibrate" id="btn-cal" onclick="calibrateZero()">Calibrate Center</button>
+        </div>
+
+        <div class="profile-bar">
+            <select id="profile-select" onchange="loadProfile()">
+                {% for p in profiles %}
+                <option value="{{ p }}" {% if p == active_profile %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+            <button class="btn-save" onclick="saveNewProfile()">Save As New</button>
+            <button class="btn-delete" onclick="deleteProfile()">Delete</button>
+        </div>
+        
+        <div class="control-group live-gauge">
+            <div class="header-row">
+                <span class="label-title">Live Steering Output</span>
+                <span class="badge" id="steering_val">50%</span>
+            </div>
+            <div class="gauge-track" id="gauge_track">
+                <div class="gauge-center"></div>
+                <div class="gauge-indicator" id="gauge_indicator"></div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="header-row">
+                <span class="label-title">Static Smoothing (Jitter)</span>
+                <span class="badge" id="static_smooth_val">{{ static_smooth }}</span>
+            </div>
+            <div class="description">How stable the wheel is when your hands are moving slowly or resting on a straight.</div>
+            <input type="range" id="static_smooth" min="1" max="100" value="{{ static_smooth }}" oninput="updateVal('static_smooth', this.value)">
+        </div>
+        
+        <div class="control-group">
+            <div class="header-row">
+                <span class="label-title">Dynamic Response (Speed)</span>
+                <span class="badge" id="dynamic_response_val">{{ dynamic_response }}</span>
+            </div>
+            <div class="description">How quickly the software drops the smoothing and reacts when you quickly flick your hands.</div>
+            <input type="range" id="dynamic_response" min="1" max="100" value="{{ dynamic_response }}" oninput="updateVal('dynamic_response', this.value)">
+        </div>
+        
+        <div class="control-group">
+            <div class="header-row">
+                <span class="label-title">Max Angle Lock</span>
+                <span class="badge" id="max_angle_val">{{ max_angle }}&deg;</span>
+            </div>
+            <div class="description">Sets the physical rotation required to reach full turn. Lower values mean faster turning.</div>
+            <input type="range" id="max_angle" min="10" max="90" value="{{ max_angle }}" oninput="updateVal('max_angle', this.value)">
+        </div>
+
+        <div class="control-group">
+            <div class="header-row">
+                <span class="label-title">Steering Linearity (Gamma)</span>
+                <span class="badge" id="linearity_val">{{ linearity }}</span>
+            </div>
+            <div class="description">100 provides perfect 1:1 turning. Lower values flatten the center response to prevent twitching on straights.</div>
+            <input type="range" id="linearity" min="1" max="100" value="{{ linearity }}" oninput="updateVal('linearity', this.value)">
+        </div>
+        
+        <div class="control-group">
+            <div class="header-row">
+                <span class="label-title">Deadzone Buffer</span>
+                <span class="badge" id="deadzone_val">{{ deadzone }}&deg;</span>
+            </div>
+            <div class="description">The physical degree threshold ignored completely around the true center.</div>
+            <input type="range" id="deadzone" min="0" max="20" value="{{ deadzone }}" oninput="updateVal('deadzone', this.value)">
+        </div>
+    </div>
+
+    <script>
+        function updateVal(id, val) {
+            let displayVal = val;
+            if(id === 'max_angle' || id === 'deadzone') displayVal += '&deg;';
+            document.getElementById(id + '_val').innerHTML = displayVal;
+            
+            fetch('/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [id]: parseInt(val) })
+            });
+        }
+
+        function loadProfile() {
+            let sel = document.getElementById('profile-select').value;
+            fetch('/load_profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: sel })
+            }).then(() => location.reload());
+        }
+
+        function saveNewProfile() {
+            let name = prompt("Enter a name for the new car profile (e.g., 'Group B Gravel'):");
+            if (name && name.trim() !== "") {
+                fetch('/save_profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: name.trim() })
+                }).then(() => location.reload());
+            }
+        }
+
+        function deleteProfile() {
+            let sel = document.getElementById('profile-select').value;
+            if (confirm(`Are you sure you want to permanently delete the profile '${sel}'?`)) {
+                fetch('/delete_profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: sel })
+                }).then(() => location.reload());
+            }
+        }
+
+        function calibrateZero() {
+            let btn = document.getElementById('btn-cal');
+            btn.innerText = "Get Ready... (2)";
+            btn.style.borderColor = "var(--step-5)";
+            btn.style.color = "var(--step-5)";
+            
+            let countdown = 2;
+            let timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    btn.innerText = `Get Ready... (${countdown})`;
+                } else {
+                    clearInterval(timer);
+                    btn.innerText = "Calibrating...";
+                    
+                    fetch('/calibrate', { method: 'POST' }).then(() => {
+                        setTimeout(() => {
+                            btn.innerText = "Center Calibrated!";
+                            setTimeout(() => {
+                                btn.innerText = "Calibrate Center";
+                                btn.style.borderColor = "";
+                                btn.style.color = "";
+                            }, 2000);
+                        }, 500); 
+                    });
+                }
+            }, 1000);
+        }
+
+        const source = new EventSource('/stream');
+        const indicator = document.getElementById('gauge_indicator');
+        const steeringVal = document.getElementById('steering_val');
+        
+        source.onmessage = function(event) {
+            let steering = parseFloat(event.data);
+            let roundedSteering = Math.round(steering);
+            
+            indicator.style.left = steering + '%';
+            steeringVal.innerText = roundedSteering + '%';
+
+            if (roundedSteering <= 0 || roundedSteering >= 100) {
+                indicator.classList.add('limit-hit');
+            } else {
+                indicator.classList.remove('limit-hit');
+            }
+        };
+    </script>
+</body>
+</html>
